@@ -25,21 +25,22 @@ if(themeToggle) {
 // ═══════════════════════════════════════════════════════════════════
 document.querySelectorAll('.nav-tab').forEach(btn => {
   btn.addEventListener('click', () => {
-    // Deactivate all tabs
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    // Activate clicked
     btn.classList.add('active');
     const target = document.getElementById('tab-' + btn.dataset.tab);
     if (target) target.classList.add('active');
-    // Load benchmark data lazily
-    if (btn.dataset.tab === 'benchmark' && !benchmarkLoaded) loadBenchmark();
-    // Sync canvas on annotation tab switch
+    // Load benchmark data when switching to benchmark tab (idempotent)
+    if (btn.dataset.tab === 'benchmark') loadBenchmark();
     if (btn.dataset.tab === 'annotation' && annoImage && annoImage.src) {
       syncCanvas();
     }
   });
 });
+
+// Auto-load benchmark data at startup so it's ready when the user switches to it
+window.addEventListener('DOMContentLoaded', () => loadBenchmark());
+
 
 // ═══════════════════════════════════════════════════════════════════
 // UPLOAD & INFERENCE
@@ -52,7 +53,8 @@ const alertNoDetect = document.getElementById('alertNoDetect');
 const resultsArea = document.getElementById('resultsArea');
 const btnReset    = document.getElementById('btnReset');
 
-// Drag-over visual feedback
+// Click on dropZone is handled natively by the <label for="fileInput"> in HTML
+
 ['dragenter', 'dragover'].forEach(evt => {
   dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 });
@@ -107,7 +109,7 @@ function handleFile(file) {
 async function uploadAndDetect(file) {
   loader.classList.add('active');
 
-  const conf = confSlider ? (parseInt(confSlider.value) / 100) : 0.25;
+  const conf = confSlider ? (parseInt(confSlider.value) / 100) : 0.01;
 
   const form = new FormData();
   form.append('file', file);
@@ -361,43 +363,53 @@ function renderBarChart(rows) {
 // ═══════════════════════════════════════════════════════════════════
 // MODEL EXPLORER
 // ═══════════════════════════════════════════════════════════════════
+// Known run folder mapping for each model name (fallback when API doesn't provide run_folder)
+const KNOWN_RUN_FOLDERS = {
+  'yolo11m': 'detect/yolo11m_20260420_205814',
+  'yolo11s': 'detect/yolo11s_20260420_202032',
+  'yolo11l': 'detect/yolo11l_20260421_002408',
+  'yolov8m': 'detect/yolov8m_20260419_213143',
+  'yolov8s': 'detect/yolov8s_20260419_210343',
+  'yolov8l': 'detect/yolov8l_20260419_221103',
+};
+
 function renderModelExplorer(rows) {
   const select = document.getElementById('modelSelect');
   if (!select) return;
 
-  // Clear existing options
   select.innerHTML = '';
-  
-  // Populate options
   rows.forEach(r => {
     const opt = document.createElement('option');
-    opt.value = r.run_folder || '';
-    opt.textContent = r.model;
+    // Use run_folder from API, or look up in known map, or skip
+    opt.value = r.run_folder || KNOWN_RUN_FOLDERS[r.model] || '';
+    opt.textContent = r.model.toUpperCase();
     select.appendChild(opt);
   });
 
-  // Function to update images
+  const imgResults  = document.getElementById('imgResults');
+  const imgConfusion = document.getElementById('imgConfusion');
+
+  const PLACEHOLDER = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22200%22><rect width=%22400%22 height=%22200%22 fill=%22%23111827%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%236B7280%22 font-size=%2216%22>Image not available</text></svg>';
+
   const updateImages = () => {
     const runFolder = select.value;
-    const imgResults = document.getElementById('imgResults');
-    const imgConfusion = document.getElementById('imgConfusion');
-    
     if (runFolder) {
-      imgResults.src = `/runs/${runFolder}/results.png`;
+      imgResults.src   = `/runs/${runFolder}/results.png`;
       imgConfusion.src = `/runs/${runFolder}/confusion_matrix_normalized.png`;
-      imgResults.style.display = 'block';
+      imgResults.style.display   = 'block';
       imgConfusion.style.display = 'block';
+      imgResults.onerror   = () => { imgResults.src = PLACEHOLDER; };
+      imgConfusion.onerror = () => { imgConfusion.src = PLACEHOLDER; };
     } else {
-      // Fallback if no run folder is available (e.g., fallback metrics)
-      imgResults.style.display = 'none';
+      imgResults.style.display   = 'none';
       imgConfusion.style.display = 'none';
     }
   };
 
-  // Add event listener and trigger once
   select.addEventListener('change', updateImages);
   updateImages();
 }
+
 
 // ═══════════════════════════════════════════════════════════════════
 // ACCORDION

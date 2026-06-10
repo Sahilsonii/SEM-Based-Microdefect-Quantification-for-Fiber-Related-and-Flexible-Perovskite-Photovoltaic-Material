@@ -1,10 +1,13 @@
 """
-worker.py -- YOLO inference subprocess
-=======================================
+worker.py -- YOLO inference subprocess (PyTorch / ultralytics)
+===============================================================
 Launched by main.py as a child process.
+Handles per-request confidence threshold and background classification.
+
 Protocol (stdin/stdout binary, length-prefixed):
   - Sends "READY" (5 bytes) when model is loaded.
-  - Reads: 4-byte big-endian uint32 length, then <length> bytes of raw image data.
+  - Reads: 4-byte big-endian uint32 length, then <length> bytes of
+           pickle({image: bytes, conf: float}).
   - Writes: 4-byte big-endian uint32 length, then pickle of result dict.
 """
 
@@ -13,6 +16,9 @@ import io
 import struct
 import pickle
 import traceback
+
+
+DEFAULT_CONF = 0.05
 
 
 def load_and_serve(weights_path: str):
@@ -57,9 +63,18 @@ def load_and_serve(weights_path: str):
             req_len = struct.unpack(">I", raw_len)[0]
             img_bytes = sys.stdin.buffer.read(req_len)
 
-            # Run inference — auto-resize any input resolution to model imgsz
-            img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-            results = model(img, imgsz=224, conf=0.05, verbose=False)
+            # Unpack request (supports conf threshold)
+            req_data    = pickle.loads(img_bytes)
+            raw_image   = req_data["image"]
+            conf_thresh = float(req_data.get("conf", DEFAULT_CONF))
+
+            # Run inference — ultralytics handles letterboxing + NMS
+            img = Image.open(io.BytesIO(raw_image)).convert("RGB")
+            W, H = img.size
+            print(f"[worker] Inference on {W}x{H} image (conf={conf_thresh})...",
+                  file=sys.stderr, flush=True)
+
+            results = model(img, imgsz=224, conf=conf_thresh, verbose=False)
             boxes_raw = results[0].boxes
 
             boxes = []
@@ -71,7 +86,38 @@ def load_and_serve(weights_path: str):
                 })
 
             result = {"boxes": boxes}
-            print(f"[worker] Inference done: {len(boxes)} boxes", file=sys.stderr, flush=True)
+
+            # Background classification when zero defects detected
+            if len(boxes) == 0:
+                # Use raw class probabilities from the model output
+                # Run a second pass at very low conf to get any signal
+                results_bg = model(img, imgsz=224, conf=0.001, verbose=False)
+                bg_boxes = results_bg[0].boxes
+                if len(bg_boxes) > 0:
+                    # Count class votes from low-conf predictions
+                    class_votes = {}
+                    for box in bg_boxes:
+                        cid = int(box.cls[0].item())
+                        conf = float(box.conf[0].item())
+                        class_votes[cid] = class_votes.get(cid, 0) + conf
+
+                    # Check background classes (3=3D_bg, 4=3D-2D_bg)
+                    bg3 = class_votes.get(3, 0)
+                    bg4 = class_votes.get(4, 0)
+                    if bg3 > 0 or bg4 > 0:
+                        if bg3 >= bg4:
+                            result["background_class"] = 3
+                            result["background_name"]  = "3D_background"
+                        else:
+                            result["background_class"] = 4
+                            result["background_name"]  = "3D-2D_background"
+                        result["bg_scores"] = {
+                            "3D_background":    round(bg3, 5),
+                            "3D-2D_background": round(bg4, 5),
+                        }
+
+            print(f"[worker] Done: {len(boxes)} detections",
+                  file=sys.stderr, flush=True)
 
         except Exception as e:
             print(f"[worker] Inference error: {e}", file=sys.stderr, flush=True)

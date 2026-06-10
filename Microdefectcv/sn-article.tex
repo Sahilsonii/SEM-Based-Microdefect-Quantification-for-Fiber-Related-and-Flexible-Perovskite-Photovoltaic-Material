@@ -8,31 +8,27 @@
 % Packages
 %=====================================================================
 \usepackage{graphicx}
+\usepackage{subcaption}
 \usepackage{multirow}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{amsthm}
 \usepackage{mathrsfs}
 \usepackage[title]{appendix}
 \usepackage{xcolor}
+\usepackage{hyperref}
 \usepackage{textcomp}
 \usepackage{manyfoot}
 \usepackage{booktabs}
 \usepackage{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
-\usepackage{listings}
 \usepackage{url}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{xurl}
 
-%=====================================================================
-% Code listing settings
-%=====================================================================
-\lstset{
-basicstyle=\small\ttfamily,
-breaklines=true,
-frame=single,
-columns=fullflexible,
-captionpos=b
-}
 
 %=====================================================================
 % Theorem settings
@@ -47,8 +43,6 @@ captionpos=b
 \theoremstyle{thmstylethree}
 \newtheorem{definition}{Definition}
 
-\raggedbottom
-
 \begin{document}
 
 %=====================================================================
@@ -56,20 +50,25 @@ captionpos=b
 %=====================================================================
 
 \title[SEM Defect Quantification for Fiber-Related Perovskite Photovoltaics]
-{Interpretable SEM-Based Microdefect Quantification for Fiber-Related
-and Flexible Perovskite Photovoltaic Materials}
+{Interpretable SEM-Based Microdefect Quantification for Fiber and Flexible Perovskite Photovoltaic Materials}
 
-%=====================================================================
 % AUTHORS
 %=====================================================================
 
-\author*[1]{\fnm{Sahil} \sur{Soni}}\email{your-email@example.com}
+\author*[1]{\fnm{Sahil} \sur{Soni}\thanks{ORCID: \href{https://orcid.org/0009-0005-0499-1694}{0009-0005-0499-1694}}}
+\email{sahilsonii369@gmail.com}
 
-\affil*[1]{
-\orgdiv{Department of Artificial Intelligence and Machine Learning},
-\orgname{Symbiosis Institute of Technology, Symbiosis International (Deemed University)},
-\orgaddress{\city{Pune}, \state{Maharashtra}, \country{India}}
+\author[1]{\fnm{Dr. Archana Y.} \sur{Chaudhari}}
+\email{archana.chaudhari@sitpune.edu.in}
+
+\affil[1]{
+  \orgname{Symbiosis Institute of Technology, Pune Campus,
+  Symbiosis International (Deemed University)},
+  \orgaddress{\city{Pune},
+  \state{Maharashtra},
+  \country{India}}
 }
+
 
 %=====================================================================
 % ABSTRACT
@@ -84,31 +83,29 @@ incomplete coverage, and non-uniform grains can create leakage
 pathways, enhance charge recombination, reduce effective
 light-absorbing area, and accelerate instability. Recent experimental
 studies have shown that nanovoids of approximately 100--200~nm
-diameter, directly observable in scanning electron microscopy (SEM)
+diameter, directly observable in Scanning Electron Microscopy (SEM)
 images, are associated with increased trap-state density and
 measurably reduced fill factor and power conversion efficiency in
 wide-bandgap perovskite devices. Eliminating such voids through
 process optimisation has been shown to improve certified efficiency
 from approximately 22\% to over 23\% in state-of-the-art inverted
 devices. Manual SEM inspection, however, is slow, subjective, and
-difficult to scale for fabrication quality control. This study
-presents an interpretable computer-vision pipeline for SEM-based
-microdefect quantification in perovskite photovoltaic films, with
-emphasis on fiber-related and flexible device inspection. The proposed
-method combines grayscale preprocessing, contrast-limited adaptive
-histogram equalization, dynamic thresholding based on image intensity
-statistics, morphological refinement, and contour-based defect
-filtering. Unlike fixed-threshold segmentation, the method adapts to
-variations in SEM contrast, illumination, and local texture. The
-pipeline is evaluated against manual annotation and classical
-baselines, including Otsu thresholding, contrast-enhanced Otsu
-thresholding, Canny edge detection, and watershed segmentation. The
-output includes defect masks, defect count, total defect area, mean
-defect diameter, and defect-area percentage, enabling direct
-connection between image features and material-quality indicators
-relevant to photovoltaic device performance. This work provides a
-lightweight and reproducible route for scalable SEM morphology
-analysis in perovskite photovoltaic material development.
+difficult to scale for fabrication quality control. This study presents
+an interpretable computer-vision pipeline, released as the open-source
+Python library \textbf{MicroDefectCV}, for automated SEM-based
+microdefect quantification in perovskite films. Operating without
+deep learning or labelled data, the package implements morphology-aware
+detection modes to quantify PbI$_2$ excess, dark pinholes, and
+grain-boundary defects. The method outputs binary defect masks,
+YOLO-format bounding-box annotations, defect count, and defect-area
+percentage, enabling direct connection between SEM morphology and
+material-quality indicators relevant to photovoltaic device performance.
+The classical pipeline is benchmarked against manual annotation and
+six deep-learning YOLO models on a 4{,}701-patch dataset. While the
+optimal YOLO11m model requires significant GPU training and labelling
+effort, MicroDefectCV provides a lightweight, reproducible, and
+annotation-free route for scalable SEM morphology analysis in
+perovskite material development.
 }
 
 %=====================================================================
@@ -116,8 +113,9 @@ analysis in perovskite photovoltaic material development.
 %=====================================================================
 
 \keywords{
-Perovskite photovoltaics, SEM morphology, fiber-related solar cells,
-flexible solar cells, microdefect quantification, green-energy materials
+Perovskite photovoltaics, SEM defect detection, MicroDefectCV,
+OpenCV adaptive pipeline, microdefect quantification, Python package,
+fiber solar cells, flexible perovskite, YOLO benchmarking
 }
 
 \maketitle
@@ -128,78 +126,78 @@ flexible solar cells, microdefect quantification, green-energy materials
 
 \section{Introduction}\label{sec:introduction}
 
-Perovskite photovoltaic materials have attracted strong attention for
-next-generation solar-energy conversion because of their high optical
-absorption, tunable band gap, solution-processability, and
-compatibility with lightweight and flexible device architectures
+\begin{figure*}[!htbp]
+\centering
+\IfFileExists{Fig0_perovskite_concept.png}{
+  \includegraphics[width=0.80\textwidth]{Fig0_perovskite_concept.png}
+}{
+  \fbox{\begin{minipage}[c][5cm][c]{0.78\textwidth}\centering
+  Place \texttt{Fig0\_perovskite\_concept.jpg} in the directory.\end{minipage}}
+}
+\caption{Layered architecture of a flexible perovskite solar cell (Au / HTL / Perovskite / ETL / ITO / Flexible Substrate).}
+\label{fig:perovskite_concept}
+\end{figure*}
+
+Perovskite photovoltaic materials have emerged as a leading
+thin-film semiconductor class for next-generation solar-energy
+conversion, combining high optical absorption coefficients
+($\sim$10$^5$~cm$^{-1}$), broadly tunable band gaps
+(1.2--3.0~eV via halide and cation substitution),
+low defect-state energies, and solution-processable fabrication routes
+compatible with both rigid and flexible substrates
 \cite{kojima2009,snaith2013,green2014,park2015}.
-Recent progress has been remarkable: inverted perovskite solar cells
-have reached certified efficiencies exceeding 27\% for narrow-bandgap
-compositions \cite{green2025}, while wide-bandgap (1.65--1.80~eV)
-inverted devices have surpassed 23\% certified efficiency with fill
-factors as high as 86.8\% \cite{chang2026}. High-efficiency
-perovskite/silicon tandem and triple-junction configurations have
-reached 30.97\% and 27.06\% respectively
-\cite{chang2026,zheng2025}, making perovskite photovoltaics a
-central technology in high-performance solar-energy conversion.
+Recent progress is striking: certified efficiencies now exceed 27\%
+for narrow-bandgap inverted devices \cite{green2025}, while
+wide-bandgap (1.65--1.80~eV) formamidinium-based compositions have
+reached 23.42\% with fill factors of 86.8\% \cite{chang2026}.
+Perovskite/silicon tandem and triple-junction architectures have
+achieved 30.97\% and 27.06\% respectively \cite{chang2026,zheng2025}.
 
-Beyond conventional planar devices, flexible and fiber-related
-perovskite solar cells are increasingly important for wearable
-electronics, smart textiles, curved surfaces, portable power systems,
-and distributed green-energy harvesting
+Despite these achievements, thin-film morphology remains the
+primary determinant of device reliability and batch-to-batch
+reproducibility. During perovskite film formation, the high-boiling-point
+solvent DMSO becomes trapped within the crystallising film and escapes
+during thermal annealing, leaving behind nanovoids of
+$144.6 \pm 56.9$~nm average diameter at the perovskite/HTL buried
+interface \cite{chang2026,chen2021}. These voids increase
+non-radiative recombination, raise trap-state density by 14.8\%,
+and directly degrade fill factor and power conversion efficiency
+\cite{chang2026}. Pinholes, incomplete film coverage, and non-uniform
+grain crystallisation similarly create leakage channels and
+photo-degradation pathways. For fiber-shaped and flexible
+perovskite solar cells as depict in figure \ref{fig:perovskite_concept}, where deposition occurs on curved or
+mechanically deformable surfaces, these morphological failure modes
+are further amplified by substrate curvature, solvent-evaporation
+anisotropy, and mechanical strain
 \cite{balilonda2019,hu2016,qiu2016,diGiacomo2016}.
-In such non-planar and mechanically adaptable configurations, film
-uniformity becomes especially critical because bending, coating on
-curved substrates, and scalable deposition can increase the
-probability of local microstructural defects. As devices approach
-the Shockley--Queisser limit, the dominant performance bottleneck
-shifts from bulk recombination to interfacial and morphological
-defects, making their systematic quantification increasingly
-important.
 
-Microstructural defects such as pinholes, voids, incomplete coverage,
-rough grains, and non-uniform crystallisation can strongly influence
-photovoltaic performance. Recent experimental evidence directly
-confirms these connections. Chang et al.\ \cite{chang2026} reported
-that perovskite films deposited on single-component hole-transport
-layers exhibit nanovoids with an average diameter of
-$144.6 \pm 56.9$~nm, as observed in SEM images. These voids were
-found to facilitate non-radiative recombination and hinder efficient
-charge-carrier transport, contributing to a trap-state density of
-$2.62 \times 10^{16}$~cm$^{-3}$ at the buried interface. When the
-hole-transport layer was optimised to eliminate such voids, the
-trap-state density was reduced by 14.8\% and the power conversion
-efficiency improved from 21.92\% to 23.04\% for 1.67~eV wide-bandgap
-devices, with a certified fill factor of 86.8\% \cite{chang2026}.
-Similarly, Zheng et al.\ \cite{zheng2025} used cross-sectional SEM
-imaging to confirm the absence of voids and delamination in
-high-performance triple-junction cells achieving 27.06\% certified
-efficiency, validating SEM morphology analysis as a standard
-quality-control tool in state-of-the-art photovoltaic research.
+Scanning Electron Microscopy (SEM) is the standard characterisation
+technique for thin-film morphology assessment at the nanoscale.
+Top-view and cross-sectional SEM images reveal pinhole distribution,
+grain boundary character, void density, incomplete film coverage,
+and interfacial delamination \cite{chang2026,zheng2025}. However,
+manual SEM inspection is slow, observer-dependent, and cannot scale
+to the image volumes required for fabrication quality control in a
+high-throughput manufacturing environment.
 
-Pinholes may expose the underlying charge-transport layer, form local
-shunting paths, and reduce the effective light-absorbing area.
-Void-like regions can interrupt film continuity and create local
-current-collection losses. The formation of voids has been attributed
-to the trapping and subsequent escape of the high-boiling-point
-solvent DMSO during film deposition \cite{chang2026,chen2021}.
-Non-uniform grain morphology and high-defect-density regions increase
-non-radiative recombination and accelerate degradation under moisture,
-heat, light, and mechanical stress. Therefore, microdefect inspection
-is not only an image-processing task but also a
-materials-characterisation problem connected to device efficiency,
-stability, reproducibility, and manufacturing yield.
+This work presents \textbf{MicroDefectCV}~\cite{microdefectcv2025},
+an open-source Python library (\texttt{pip install microdefectcv})
+that converts raw perovskite SEM images into quantitative defect
+descriptors without any deep learning, labelled training data, or
+GPU resources. The pipeline implements six morphology-aware detection
+modes and an automatic image-type classifier based on intensity
+statistics, combining CLAHE contrast enhancement, percentile-based
+dynamic thresholding, grain-boundary suppression, top-hat transforms
+for bright-particle detection, and contour-based shape filtering.
+Output is provided as binary defect masks, YOLO-format bounding-box
+labels, defect count, and defect-area percentage --- material-quality
+indicators directly comparable across fabrication batches and
+processing conditions. To characterise the annotation landscape and
+benchmark MicroDefectCV against supervised approaches, three
+annotation strategies (zero-shot AutoDistill, standalone SAM, and
+manual annotation) were evaluated, followed by a six-model YOLO
+benchmark on the resulting 4{,}701-patch dataset.
 
-Scanning electron microscopy (SEM) is widely used to examine
-perovskite thin-film morphology because it provides high-resolution
-surface information. SEM images allow researchers to visually inspect
-pinhole formation, grain structure, local cracks, incomplete surface
-coverage, and coating defects. As demonstrated across recent
-high-impact studies \cite{chang2026,zheng2025}, SEM morphology
-assessment is a standard step in verifying film quality before and
-after process optimisation. However, manual SEM inspection is slow,
-subjective, and difficult to reproduce across large fabrication
-batches. This limitation is more serious for flexible and
 fiber-integrated devices, where film morphology may vary along curved
 or elongated geometries. For scalable green-energy manufacturing,
 there is a need for automated and interpretable tools that can convert
@@ -229,26 +227,27 @@ documented in recent high-performance perovskite device studies
 The main contributions of this work are:
 
 \begin{itemize}
-\item A materials-aware SEM analysis pipeline is proposed for
-microdefect quantification in perovskite photovoltaic films,
-targeting morphological features directly linked to device
-performance loss.
-\item The work is framed for fiber-related and flexible perovskite
-solar-cell inspection, where coating uniformity and scalable quality
-control are critical.
-\item Pinholes and voids are treated as material-quality indicators
-linked to film coverage, leakage pathways, non-radiative
-recombination, and stability, consistent with findings reported in
-state-of-the-art perovskite device literature \cite{chang2026,hu2023}.
-\item Dynamic thresholding and CLAHE are integrated to improve
-robustness under SEM contrast and illumination variation.
-\item The proposed method is validated against manual annotation and
-classical segmentation baselines including Otsu, CLAHE+Otsu, Canny,
-and watershed.
-\item The method outputs defect masks and measurable descriptors such
-as defect count, total defect area, mean defect diameter, and
-defect-area percentage, which can be compared across fabrication
-conditions and device batches.
+\item \textbf{MicroDefectCV package}: a publicly released, pip-installable
+Python library~\cite{microdefectcv2025} providing six morphology-aware
+detection modes, auto image-type classification, grain-boundary
+suppression, and direct YOLO-format label export --- all without
+deep learning or labelled data.
+\item \textbf{Annotation-free defect quantification}: the pipeline
+automatically detects pinholes, voids, PbI$_2$ bright particles, and
+needle crystals from raw SEM images and produces measurable descriptors
+(defect count, area fraction, mean diameter) in under one second per
+image on CPU.
+\item \textbf{Experimental validation through annotation and YOLO benchmarks}:
+to motivate and contextualise the classical approach, zero-shot
+auto-annotation (AutoDistill), manual annotation, and a six-model
+YOLO benchmark (4{,}701 patches, five classes) are reported. Despite
+being annotation-free, MicroDefectCV outperforms the YOLO models in
+practical throughput, requiring no GPU or labelling effort.
+\item \textbf{Materials-science grounding}: defect descriptors are
+interpreted through the physical mechanisms linking SEM-observable
+voids to trap-state density and certified efficiency, consistent with
+recent high-performance perovskite device literature
+\cite{chang2026,zheng2025}.
 \end{itemize}
 
 %=====================================================================
@@ -257,6 +256,13 @@ conditions and device batches.
 
 \section{Materials Relevance and SEM Morphology Motivation}
 \label{sec:materials_relevance}
+
+Perovskite thin films are the photoelectric active layer in both
+rigid and flexible solar cells. Their performance is intimately
+connected to film morphology, and SEM imaging is the standard
+technique for visualising the nanoscale features that determine
+device quality. This section summarises the physical mechanisms
+that motivate automated SEM defect quantification.
 
 \subsection{Microdefects in Perovskite Photovoltaic Films}
 \label{subsec:microdefects}
@@ -408,6 +414,12 @@ established by recent experimental literature
 
 \section{Related Work}\label{sec:related_work}
 
+The development of automated SEM analysis tools for perovskite
+morphology spans classical image processing, deep learning
+baselines, and materials characterisation. This section reviews the
+most relevant prior work and identifies the gap that MicroDefectCV
+is designed to fill.
+
 \subsection{Perovskite and Fiber-Related Photovoltaic Materials}
 \label{subsec:psc_related_work}
 
@@ -490,13 +502,13 @@ remain valuable. Furthermore, the nanovoid diameter range observed
 in perovskite SEM images ($\sim$100--200~nm \cite{chang2026}) is at
 a spatial scale where intensity-based segmentation methods are
 well-suited, provided sufficient contrast enhancement is applied
-before thresholding.
+before thresholding. Table \ref{tab:literature_review} describe the   literature and research gap of existing studies.
 
 %=====================================================================
 % Literature Review Table
 %=====================================================================
 
-\begin{table*}[t]
+\begin{table*}[!htbp]
 \caption{Representative literature and research gap motivating the present study}
 \label{tab:literature_review}
 \begin{tabular}{@{}p{2.8cm}p{3.0cm}p{4.6cm}p{4.8cm}@{}}
@@ -518,7 +530,9 @@ Chang et al.\ \cite{chang2026}
     with FF 86.8\%
   & Manual SEM used; no automated quantification pipeline \\[4pt]
 Zheng et al.\ \cite{zheng2025}
-  & Perovskite/perovskite/Si triple junction
+  & Perovskite
+  /perovskite
+  /Si triple junction
   & SEM cross-sections verified void-free interfaces in 27.06\% cells;
     SEM used as standard quality gate
   & SEM used qualitatively; no defect descriptors extracted \\[4pt]
@@ -578,14 +592,14 @@ $>$98\%), phenethylammonium iodide (PEAI, $>$99\%), n-dodecylammonium
 iodide (DDAI, $>$99\%), cyclohexylmethylammonium iodide (CMAI,
 $>$99\%), 2-thiophenemethylammonium iodide (TMAI, $>$99\%), and
 methylammonium chloride (MACl, $>$98\%) were procured from GreatCell
-Solar and used as received \cite{ref23}.
+Solar and used as received \cite{ref24}.
 
 \subsection{Fabrication of Perovskite Films}\label{subsec:fabrication}
 
 ITO-coated or plain glass substrates were cleaned by sequential
 sonication in acetone, ethanol, and 2-propanol, followed by 15~min
 UV--ozone treatment. High-purity $\delta$-FAPbI$_3$ powder was
-synthesised using a one-pot method \cite{ref23}. The powder was
+synthesised using a one-pot method \cite{ref24}. The powder was
 washed three times with ethyl acetate and acetonitrile, dried in a
 vacuum oven for more than 24~h, and stored in an N$_2$-filled
 glovebox.
@@ -607,7 +621,7 @@ SEM imaging and the automated pipeline described in this work.
 
 For two-dimensional (2D) perovskite layers on three-dimensional (3D)
 perovskite films, 4~mM solutions of PEAI, TMAI, CMAI, or DDAI in IPA
-were sprayed at 3.0~mL/min using N$_2$ gas \cite{ref23}.
+were sprayed at 3.0~mL/min using N$_2$ gas .
 
 \subsection{Film Characterisation}\label{subsec:film_characterization}
 
@@ -651,7 +665,7 @@ training and evaluation pipeline, these 440 base images were split
 into 224$\times$224~pixel patches using a sliding-window strategy with
 25\% overlap, producing 4{,}701 annotated patches distributed across
 training (80\%), validation (10\%), and test (10\%) sets.
-Table~\ref{tab:dataset_summary} summarises the dataset structure.
+Table ~\ref{tab:dataset_summary} summarises the dataset structure.
 
 % TODO: Add exact SEM magnification, accelerating voltage, working
 % distance, and image pixel resolution when available.
@@ -667,7 +681,7 @@ guide for setting the minimum area threshold $A_{min}$ in the pipeline.
 
 \subsection{Defect Categories}\label{subsec:defect_categories}
 
-The defect categories considered in this work include PbI$_2$ bright
+The defect categories as shown in figure \ref{fig:dataset_preview} considered in this work include PbI$_2$ bright
 particles, small pinholes, large pinholes, PbI$_2$ needle crystals,
 and grain-boundary-associated defects. Pinholes and voids are defined
 as local dark regions indicating incomplete film coverage. Bright
@@ -677,10 +691,11 @@ they may contribute to charge leakage, non-radiative recombination,
 reduced effective absorber coverage, and long-term instability in
 perovskite photovoltaic devices \cite{chang2026,hu2023}.
 
-\begin{table*}[t]
+\begin{table*}[!htbp]
 \caption{Summary of the SEM image dataset used for defect quantification
 and YOLO model training}
 \label{tab:dataset_summary}
+\small
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 Class / group & Base images & Patches (224$\times$224) & Defect type & Annotation \\
@@ -696,11 +711,25 @@ Total                              & 440 & 4{,}701                         & 5 c
 \end{tabular}
 \end{table*}
 
-%=====================================================================
-% 5. PROPOSED PIPELINE
-%=====================================================================
+%---------------------------------------------------------------------
+% Dataset preview figure
+%---------------------------------------------------------------------
+%\begin{figure*}[t]
+%\centering
+%\IfFileExists{dataset preview.png}{
+%  \includegraphics[width=0.96\textwidth]{dataset preview.png}
+%}
+%\caption{Representative 224$\times$224~px SEM patches from the five morphology classes used %for YOLO training and MicroDefectCV evaluation.}
+%\label{fig:dataset_preview}
+%\end{figure*}
+\begin{figure*}[!htbp]
+\centering
+\includegraphics[width=0.96\textwidth]{dataset preview.png}
+\caption{Representative 224$\times$224~px SEM patches from the five morphology classes used for YOLO training and MicroDefectCV evaluation.}
+\label{fig:dataset_preview}
+\end{figure*}
 
-\section{Proposed Materials-Aware Defect Quantification Pipeline}
+\section{Proposed Methodology for Materials-Aware Defect Quantification}
 \label{sec:methodology}
 
 The proposed pipeline converts SEM morphology into quantitative defect
@@ -709,22 +738,14 @@ enhancement, dynamic thresholding, morphological refinement, contour
 extraction, and defect quantification. Figure~\ref{fig:pipeline} shows
 the complete workflow.
 
-\begin{figure*}[t]
+\begin{figure*}[!htbp]
 \centering
-\IfFileExists{Fig1.png}
-{\includegraphics[width=0.95\textwidth]{Fig1.png}}
-{
-\fbox{
-\begin{minipage}[c][5.4cm][c]{0.92\textwidth}
-\centering
-Upload workflow image as \texttt{Fig1.png}.\\
-Suggested panels: input SEM image, CLAHE image, threshold mask,
-morphology mask, final defect overlay.
-\end{minipage}
-}
-}
-\caption{Proposed SEM-based microdefect quantification workflow for
-perovskite photovoltaic morphology analysis}
+\IfFileExists{Fig1_pipeline_overview.png}
+{\includegraphics[width=0.95\textwidth]{Fig1_pipeline_overview.png}}
+
+\caption{MicroDefectCV detection pipeline: from raw SEM input through
+  CLAHE enhancement, dynamic thresholding, and contour filtering
+  to the final annotated defect mask.}
 \label{fig:pipeline}
 \end{figure*}
 
@@ -817,7 +838,7 @@ pathways \cite{chang2026,hu2023}.
 % 6. ALGORITHM AND IMPLEMENTATION
 %=====================================================================
 
-\section{Algorithm and Implementation}\label{sec:algorithm}
+\subsection{Algorithm and Implementation}\label{sec:algorithm}
 
 Algorithm~\ref{algo:pipeline} summarises the proposed SEM microdefect
 quantification process.
@@ -826,24 +847,55 @@ quantification process.
 \caption{SEM microdefect quantification for perovskite photovoltaic films}
 \label{algo:pipeline}
 \begin{algorithmic}[1]
-\Require SEM image $I$, sensitivity factor $k$, minimum area $A_{min}$
-\Ensure Defect mask $M$, defect regions $R$, defect descriptors $Q$
-\State Convert $I$ to grayscale image $G$
-\State Apply intensity normalisation and noise reduction to obtain $G_n$
-\State Apply CLAHE to obtain contrast-enhanced image $C$
-\State Compute $\mu$ and $\sigma$ from $C$
-\State Compute dynamic threshold $T = \mu - k\sigma$
-\State Generate candidate mask $M_c$ where $C(x,y)<T$
-\State Apply morphological opening and closing to refine $M_c$
-\State Extract connected components or contours
-\State Remove components with area below $A_{min}$
-\State Compute defect count, total defect area, mean defect diameter,
-       and defect-area percentage
-\State Return final defect mask $M$, regions $R$, and descriptors $Q$
+\Function{QuantifyMicrodefects}{$I, k, A_{min}$}
+    \Statex \qquad \textbullet\ \textbf{requirement 1}: SEM image $I$
+    \Statex \qquad \textbullet\ \textbf{requirement 2}: sensitivity factor $k$ and minimum area $A_{min}$
+    \Statex \qquad \textbullet\ \textbf{returns 1}: a binary defect mask $M$
+    \Statex \qquad \textbullet\ \textbf{returns 2}: defect regions $R$ and quantitative descriptors $Q$
+    \State $G \gets \Call{Grayscale}{I}$
+    \State $G_n \gets \Call{NormalizeAndDenoise}{G}$
+    \State $C \gets \Call{CLAHE}{G_n}$ \Comment{Local contrast enhancement}
+    \State $\mu, \sigma \gets \Call{ComputeStatistics}{C}$
+    \State $T \gets \mu - k\sigma$ \Comment{Dynamic threshold calculation}
+    \State $M_c \gets \{(x,y) \mid C(x,y) < T\}$
+    \State $M_c \gets \Call{MorphologicalFilter}{M_c}$ \Comment{Opening and closing operations}
+    \State $\mathcal{C} \gets \Call{ExtractContours}{M_c}$
+    \State $R \gets \emptyset$
+    \For{every contour $c \in \mathcal{C}$}
+        \If{$\Call{Area}{c} \ge A_{min}$}
+            \State $R \gets R \cup \{c\}$
+        \EndIf
+    \EndFor
+    \State $M \gets \Call{CreateMask}{R}$
+    \State $Q \gets \Call{ComputeDescriptors}{R}$
+    \State \textbf{return} $M, R, Q$
+\EndFunction
 \end{algorithmic}
 \end{algorithm}
 
-\subsection{Software and Reproducibility}\label{subsec:software}
+\subsubsection{The MicroDefectCV Package}\label{subsec:microdefectcv_pkg}
+
+The pipeline described in this section is released as
+\texttt{microdefectcv}~\cite{microdefectcv2025}, a pip-installable
+Python package available at
+\url{https://github.com/Sahilsonii/microdefectcv} and
+\url{https://pypi.org/project/microdefectcv/}. The package provides
+six detection modes tailored to different perovskite morphologies:
+\texttt{pbi2} (bright crystallite particles),
+\texttt{pinhole} (dark voids),
+\texttt{2d} (flat 2D perovskite morphology),
+\texttt{3d} (3D grains with boundary suppression),
+\texttt{3d\_2d} (mixed morphology), and
+\texttt{auto} (automatic mode that classifies the input image from
+intensity statistics alone). Results are returned as binary masks,
+bounding-box contours, defect count, and defect-area ratio, with
+an optional YOLO-format label file export
+(\texttt{save\_yolo\_annotations}). The package has a command-line
+entry point (\texttt{microdefectcv}) and runs on a standard CPU
+with no deep-learning dependency, achieving under one second per
+image on an Intel Core~i7 system.
+
+\subsubsection{Software and Reproducibility}\label{subsec:software}
 
 The proposed method was implemented in Python~3.10 using OpenCV~4.8
 and NumPy~1.24. The pipeline runs on a standard CPU and processes
@@ -854,11 +906,11 @@ The YOLO training experiments were conducted on an NVIDIA RTX~3050~Ti
 code is available at the repository listed in the Code Availability
 section.
 
-\begin{table}[h]
-\caption{Key parameter settings of the proposed
-PerovskiteDefectFilter pipeline}
+\begin{table*}[!htbp]
+\caption{Key parameter settings of the MicroDefectCV pipeline}
 \label{tab:parameters}
-\begin{tabular}{@{}llp{4.5cm}@{}}
+\renewcommand{\arraystretch}{0.85}
+\begin{tabular}{@{}llp{6cm}@{}}
 \toprule
 Parameter & Value & Purpose \\
 \midrule
@@ -876,26 +928,14 @@ NMS IoU threshold         & 0.40       & Removes overlapping boxes \\
 Confidence threshold      & 0.30       & Minimum detection confidence \\
 \botrule
 \end{tabular}
-\end{table}
+\end{table*}
 
-\begin{lstlisting}[language=Python,
-caption={Simplified dynamic thresholding step for candidate defect extraction},
-label={lst:threshold}]
-import cv2
-import numpy as np
-
-def dynamic_threshold_mask(gray_image, k=1.2):
-    mean_intensity = np.mean(gray_image)
-    std_intensity = np.std(gray_image)
-    threshold = mean_intensity - k * std_intensity
-    mask = (gray_image < threshold).astype(np.uint8) * 255
-    return mask
-\end{lstlisting}
-
-Listing~\ref{lst:threshold} shows the simplified thresholding logic.
-The final implementation also includes contrast enhancement,
-morphological refinement, contour filtering, and defect descriptor
-calculation.
+AS listing in table \ref{tab:parameters} the simplified thresholding
+logic used for dark-region candidate extraction. The full
+implementation in the \texttt{microdefectcv} package additionally
+includes mode-specific grain-boundary suppression, top-hat
+transforms for bright-particle detection, needle-crystal filtering,
+and IoU-based non-maximum suppression.
 
 %=====================================================================
 % 7. EXPERIMENTAL VALIDATION
@@ -903,20 +943,14 @@ calculation.
 
 \section{Experimental Validation}\label{sec:validation}
 
-The proposed method was validated using manual annotations and
-compared with classical segmentation baselines. The goal was to
-determine whether the proposed pipeline detects material-relevant
-pinhole and void-like regions more consistently than standard
-image-processing methods.
-
-\subsection{Manual Annotation Reference}\label{subsec:manual_reference}
-
-Manual annotation was used as the reference standard for evaluating
-segmentation quality. Annotated defect regions were treated as ground
-truth for calculating pixel-level and region-level metrics.
-
-% TODO: Add: number of annotated images, defects, annotators,
-% and disagreement resolution process.
+The annotation and validation workflow proceeded through three
+stages before arriving at the MicroDefectCV pipeline. First, two
+automated zero-shot approaches (AutoDistill and SAM) were tested
+and found insufficient for SEM morphology. Second, manual
+bounding-box annotation was carried out to produce reliable
+ground truth. Third, the MicroDefectCV classical pipeline was
+developed and benchmarked against both the manual reference and
+deep-learning YOLO models.
 
 %---------------------------------------------------------------------
 \subsection{Attempted Zero-Shot Auto-Annotation Using AutoDistill}
@@ -924,299 +958,213 @@ truth for calculating pixel-level and region-level metrics.
 %---------------------------------------------------------------------
 
 Prior to committing to manual annotation, a zero-shot automatic
-annotation approach was evaluated as a potential means to accelerate
-ground-truth generation for the SEM pinhole dataset. The framework
-selected was AutoDistill~\cite{autodistill2023}, an open-source
-toolkit developed by Roboflow that enables training-free image labelling
-by composing large foundation models into an automated labelling
-pipeline.
+annotation approach was evaluated to accelerate ground-truth
+generation. The framework selected was
+AutoDistill~\cite{autodistill2023}, which composes Grounded
+DINO~\cite{liu2023groundingdino} for text-prompted bounding-box
+detection with SAM~\cite{kirillov2023sam} for pixel-level
+segmentation. Ten natural-language prompts describing pinholes
+(e.g., ``dark circular void on surface'', ``deep dark cavity'')
+were submitted to the pipeline. Despite extensive prompt engineering,
+AutoDistill exhibited \textbf{systematic under-detection in
+high-density pinhole regions}: Grounding DINO's NMS suppressed
+overlapping adjacent detections, the grayscale SEM domain conflicted
+with the model's colour-image pre-training, and confidence scores
+varied unpredictably with magnification. Figure~\ref{fig:autodistill_result}
+shows the under-detection failure on a representative frame.
 
-\subsubsection{AutoDistill Architecture and Workflow}
-\label{subsubsec:autodistill_arch}
-
-AutoDistill operates through a two-stage foundation-model pipeline
-built on Grounded DINO~\cite{liu2023groundingdino} and the Segment
-Anything Model (SAM)~\cite{kirillov2023sam}:
-
-\begin{enumerate}
-\item \textbf{Grounded DINO (text-prompted detection).}
-  Grounding DINO is an open-vocabulary object detector that accepts
-  free-form natural-language prompts and produces bounding boxes around
-  regions matching the described concept. The model was pre-trained on
-  large-scale internet image datasets and generalises to novel visual
-  concepts via text alignment.
-\item \textbf{SAM (instance segmentation).}
-  The bounding-box proposals from Grounding DINO are passed to SAM,
-  which generates pixel-level segmentation masks for each detected
-  region. SAM was pre-trained on a billion-mask dataset and is designed
-  to segment arbitrary objects with minimal supervision.
-\item \textbf{CaptionOntology (label mapping).}
-  AutoDistill uses a \texttt{CaptionOntology} object to map one or more
-  natural-language prompt strings to a single class label. Each prompt
-  string is independently submitted to Grounding DINO; all matched
-  regions are merged and assigned the mapped label.
-\end{enumerate}
-
-For this study, the following ten prompts were mapped to the class
-label ``pinhole'':
-
-\begin{lstlisting}[language=Python,
-caption={AutoDistill CaptionOntology used for zero-shot pinhole annotation},
-label={lst:autodistill}]
-from autodistill.detection import CaptionOntology
-
-ontology = CaptionOntology({
-    "dark circular void on surface":  "pinhole",
-    "black hole defect":              "pinhole",
-    "dark spot with shadow depth":    "pinhole",
-    "deep dark cavity":               "pinhole",
-    "circular dark depression":       "pinhole",
-    "dark pit with depth":            "pinhole",
-    "surface defect void":            "pinhole",
-    "black void in film":             "pinhole",
-    "material void defect":           "pinhole",
-    "through-hole defect":            "pinhole",
-})
-\end{lstlisting}
-
-The input images were SEM micrographs of 3D perovskite films with
-pinholes, provided as \texttt{.tif} and \texttt{.bmp} files. The full
-AutoDistill pipeline was executed using
-\texttt{autodistill-grounded-sam}~v0.1 and
-\texttt{autodistill-yolov8}~v0.1.4, with Ultralytics~8.0.81 as the
-downstream YOLO backend.
-
-\subsubsection{Observed Limitations}
-\label{subsubsec:autodistill_limitations}
-
-While AutoDistill successfully identified a subset of the pinholes
-present in the SEM images, the approach exhibited a critical
-limitation: \textbf{systematic under-detection in images containing
-dense pinhole populations}. In SEM frames where tens to hundreds of
-pinholes are spatially distributed across the field of view, the
-Grounding DINO detector consistently located only a small fraction of
-the visible defects per image. The following failure modes were
-identified:
-
-\begin{itemize}
-\item \textbf{Low recall in high-density regions.} When pinholes are
-  closely packed, Grounding DINO's region-proposal stage suppresses
-  overlapping or adjacent detections, resulting in many pinholes being
-  missed. This is a consequence of non-maximum suppression (NMS)
-  behaviour tuned for natural-image object detection, where objects of
-  the same class rarely crowd the image.
-\item \textbf{Domain gap between natural-image pre-training and SEM
-  texture.} Grounding DINO was pre-trained on COCO-style colour images
-  of everyday objects. SEM images are grayscale, have
-  characteristically different noise profiles (e.g., shot noise,
-  charging artefacts), and lack the photometric depth cues that the
-  text prompts assume. Prompts such as ``deep dark cavity'' imply
-  three-dimensional depth, which is not directly encoded in SEM
-  electron backscatter intensity.
-\item \textbf{Inconsistent detection confidence across magnifications.}
-  The confidence scores returned by Grounding DINO varied substantially
-  depending on image magnification and local contrast, indicating that
-  the detector was not robust to the imaging variability inherent in
-  the SEM dataset.
-\item \textbf{Dependency conflicts.} The AutoDistill ecosystem required
-  \texttt{ultralytics==8.0.81}, which conflicts with the newer
-  Ultralytics versions required by the downstream YOLO11 training
-  pipeline. Managing these conflicting dependencies added operational
-  overhead to the annotation workflow.
-\end{itemize}
-
-Figure~\ref{fig:autodistill_result} illustrates a representative
-example: the left panel shows the original SEM image with manually
-visible pinholes, and the right panel shows the AutoDistill output,
-in which only a fraction of the pinholes are bounded.
-
-\begin{figure*}[t]
+\begin{figure}[!htbp]
 \centering
 \IfFileExists{Fig_autodistill.png}
-{\includegraphics[width=0.92\textwidth]{Fig_autodistill.png}}
+{\includegraphics[width=0.95\columnwidth]{Fig_autodistill.png}}
 {
-\fbox{
-\begin{minipage}[c][5.0cm][c]{0.90\textwidth}
-\centering
-\textbf{[Figure placeholder: AutoDistill output on SEM pinholes]}\\[4pt]
-Upload side-by-side comparison as \texttt{Fig\_autodistill.png}.\\[2pt]
-Suggested panels (left to right):\\
-(a)~Original SEM image with visible pinholes.\\
-(b)~AutoDistill / Grounded SAM output showing detected pinholes only
---- note missing detections in dense regions.
-\end{minipage}
+\fbox{\begin{minipage}[c][3.5cm][c]{0.90\columnwidth}\centering
+\textbf{[Placeholder: AutoDistill output]}\\[4pt]
+Upload comparison as \texttt{Fig\_autodistill.png}.
+\end{minipage}}
 }
-}
-\caption{Representative AutoDistill (Grounded SAM) annotation result on
-a 3D perovskite SEM image. The detector successfully localises
-prominent pinholes but misses the majority of defects in dense regions,
-demonstrating the low-recall limitation of zero-shot foundation-model
-annotation on SEM data.}
+\caption{AutoDistill output: only a fraction of pinholes are detected
+  in dense regions due to NMS suppression and SEM domain gap.}
 \label{fig:autodistill_result}
-\end{figure*}
+\end{figure}
 
-\subsubsection{Decision to Adopt Manual Annotation}
-\label{subsubsec:manual_decision}
-
-Because AutoDistill produced systematically incomplete annotations in
-high-density pinhole images, it was determined that auto-generated
-labels would introduce a substantial false-negative bias into any
-downstream model trained on these labels. A model trained with
-incomplete ground truth would inherit the detector's blind spots and
-fail to learn the full distribution of pinhole morphologies in the
-dataset. Consequently, manual annotation was adopted as the primary
-ground-truth source. The AutoDistill experiment is documented here
-as a negative result of scientific value: it establishes an important
-baseline for future researchers considering zero-shot auto-annotation
-of SEM defect datasets, and it motivates the development of
-domain-adapted annotation models that account for the unique imaging
-physics of electron microscopy.
-
-\subsubsection{Alternative Attempt: Segment Anything Model (SAM) Over-Segmentation}
+%---------------------------------------------------------------------
+\subsubsection{Alternative Attempt: Segment Anything Model (SAM)}
 \label{subsubsec:sam_attempt}
+%---------------------------------------------------------------------
 
-In an effort to circumvent the recall issues of the Grounded DINO text-to-box stage, a purely mask-based approach was tested using the standalone Segment Anything Model (SAM) in \textit{automatic mask generation} mode. The hypothesis was that SAM's highly robust edge-detection capabilities, operating without the semantic constraints of a text prompt, might independently segment the pinholes based purely on local contrast gradients.
+To circumvent AutoDistill's recall limitations, the standalone
+SAM \texttt{vit\_b} model was tested in automatic mask generation
+mode with a low IoU threshold (\texttt{pred\_iou\_thresh=0.35}) and
+downstream area filters targeting the pinhole size range. SAM
+exhibited severe \textbf{over-segmentation}: it generated hundreds
+of arbitrary grain-texture patches rather than isolating the dark
+pinhole cavities. Because SAM is class-agnostic and relies on sharp
+edges, and perovskite pinholes present as soft low-contrast gradients
+in SEM, the masks did not correspond to material defect boundaries.
+Figure~\ref{fig:sam_result} shows the over-segmentation failure.
 
-The SAM \texttt{vit\_b} model was initialized via the \texttt{SamAutomaticMaskGenerator} API with a low intersection-over-union (IoU) threshold (\texttt{pred\_iou\_thresh=0.35}) to encourage dense segmentation. Area filters were applied downstream to discard excessively large masks (e.g., entire grains) or noise-level artifacts, keeping only masks within the typical pinhole size range.
-
-\textbf{Observed Limitations of SAM:}
-Despite exhaustive parameter tuning, SAM failed to isolate pinholes as discrete instances. Instead, the model exhibited severe over-segmentation of the entire SEM image. As shown in Figure~\ref{fig:sam_result}, SAM generated hundreds of arbitrary masks that traced the boundaries of perovskite grains, surface texture gradients, and background noise, rather than specifically encapsulating the dark pinhole cavities. 
-
-The core issue is that SAM is class-agnostic and relies strongly on sharp, unbroken edges. In SEM micrographs, pinholes often present as soft, low-contrast gradients rather than sharp objects. SAM therefore breaks the image into mosaic-like patches based on arbitrary intensity shifts. Because the generated masks did not correspond to the physical boundaries of the material defects, the standalone SAM approach was abandoned. This further reinforced the necessity of the proposed materials-aware pipeline, which specifically targets the morphological characteristics of pinholes (e.g., circularity and extreme local contrast) rather than generic image edges.
-
-\begin{figure*}[t]
+\begin{figure}[!htbp]
 \centering
 \IfFileExists{Fig_sam_result.jpg}
-{\includegraphics[width=0.92\textwidth]{Fig_sam_result.jpg}}
-{
-\fbox{
-\begin{minipage}[c][5.0cm][c]{0.90\textwidth}
-\centering
-\textbf{[Figure placeholder: SAM output on SEM pinholes]}\\[4pt]
-Upload comparison as \texttt{Fig\_sam\_result.jpg}.
-\end{minipage}
-}
-}
-\caption{Automatic mask generation using the Segment Anything Model (SAM). The class-agnostic model over-segments the SEM micrograph into hundreds of arbitrary mosaic patches based on surface texture and grain boundaries, entirely failing to isolate the pinhole defects. This highlights the unsuitability of generic edge-based segmentation for SEM material morphology.}
+{\includegraphics[width=0.95\columnwidth]{Fig_sam_result.jpg}}
+{\fbox{\begin{minipage}[c][3.5cm][c]{0.90\columnwidth}\centering
+\textbf{[Placeholder: SAM over-segmentation result]}\end{minipage}}}
+\caption{SAM over-segments the SEM image into grain-texture patches
+  rather than isolating pinholes.}
 \label{fig:sam_result}
+\end{figure}
+
+%---------------------------------------------------------------------
+\subsection{Manual Annotation Reference}\label{subsec:manual_reference}
+%---------------------------------------------------------------------
+
+Because both zero-shot approaches failed to produce reliable
+ground truth, manual bounding-box annotation was adopted. Annotation
+was performed using a custom OpenCV-based tool that displays each
+SEM image on a canvas, allows annotators to draw bounding boxes by
+class, and saves labels in YOLO format (\texttt{.txt} files with
+normalised $x_c$, $y_c$, $w$, $h$ coordinates). PbI$_2$ excess
+regions (Class~0) yielded more than 200~boxes per frame, while 3D
+pinholes (Class~1) produced 5--15 sparse but large annotations per
+frame. Figure~\ref{fig:anno_gt} shows representative annotations
+for both classes.
+
+\begin{figure*}[!htbp]
+\centering
+\begin{subfigure}[t]{0.48\textwidth}
+  \centering
+  \IfFileExists{Fig_anno_pbi2.png}{
+    \includegraphics[width=\textwidth]{Fig_anno_pbi2.png}
+  }{
+    \fbox{\begin{minipage}[c][5cm][c]{\textwidth}\centering
+    \texttt{Fig\_anno\_pbi2.png} not found.\end{minipage}}
+  }
+  \caption{PbI$_2$ excess (Class~0): dense orange bounding boxes.}
+  \label{fig:anno_pbi2}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.48\textwidth}
+  \centering
+  \IfFileExists{Fig_anno_pinhole.png}{
+    \includegraphics[width=\textwidth]{Fig_anno_pinhole.png}
+  }{
+    \fbox{\begin{minipage}[c][5cm][c]{\textwidth}\centering
+    \texttt{Fig\_anno\_pinhole.png} not found.\end{minipage}}
+  }
+  \caption{3D pinholes (Class~1): sparse cyan bounding boxes.}
+  \label{fig:anno_pinhole}
+\end{subfigure}
+\caption{Manual bounding-box annotations for PbI$_2$ excess (a)
+  and 3D pinhole (b) defect classes.}
+\label{fig:anno_gt}
 \end{figure*}
 
-\subsection{Baseline Methods}\label{subsec:baselines}
+%---------------------------------------------------------------------
+\subsubsection{Decision to Adopt Manual Annotation}
+\label{subsubsec:manual_decision}
+%---------------------------------------------------------------------
 
-The proposed method was compared with the following baselines:
+AutoDistill-generated labels carried a substantial false-negative
+bias that any downstream YOLO model would inherit. SAM-generated
+masks did not correspond to material defect boundaries. Manual
+annotation was therefore the only approach that produced
+ground-truth data reliable enough for YOLO model training and for
+validating the MicroDefectCV classical pipeline.
+
+%---------------------------------------------------------------------
+\subsection{MicroDefectCV Adaptive Filter Pipeline}
+\label{subsec:baselines}
+%---------------------------------------------------------------------
+
+Following the annotation phase, the MicroDefectCV adaptive filter
+pipeline was applied to the same SEM images. Unlike the annotation
+approaches above, MicroDefectCV requires no ground-truth labels.
+It selects a detection mode automatically from image statistics
+(\texttt{auto} mode) and runs CLAHE, dynamic thresholding,
+grain-boundary suppression, and contour shape filtering to produce
+binary defect masks and YOLO-format annotations in under one second
+per image on CPU. The pipeline output was compared against the
+manual annotation ground truth and the following classical baselines:
 
 \begin{itemize}
 \item Otsu thresholding
 \item CLAHE followed by Otsu thresholding
 \item Canny edge detection
 \item Watershed segmentation
-\item Manual annotation reference
 \end{itemize}
 
-\subsection{Evaluation Metrics}\label{subsec:metrics}
-
-Pixel-level segmentation was evaluated using precision, recall,
-F1-score, and intersection over union (IoU):
-
-\begin{equation}
-Precision = \frac{TP}{TP + FP}
-\label{eq:precision}
-\end{equation}
-
-\begin{equation}
-Recall = \frac{TP}{TP + FN}
-\label{eq:recall}
-\end{equation}
-
-\begin{equation}
-F1 = \frac{2 \times Precision \times Recall}{Precision + Recall}
-\label{eq:f1}
-\end{equation}
-
-\begin{equation}
-IoU = \frac{TP}{TP + FP + FN}
-\label{eq:iou}
-\end{equation}
-
-where $TP$, $FP$, and $FN$ represent true positives, false positives,
-and false negatives, respectively.
-
-\subsection{Ablation Study}\label{subsec:ablation}
-
-An ablation study was conducted to examine the contribution of each
-pipeline component. The full method was compared with versions without
-CLAHE, without morphological refinement, and without contour-area
-filtering.
+A visual qualitative comparison of these methods against the MicroDefectCV pipeline and manual annotations is shown in Figure~\ref{fig:qualitative} (Section~\ref{sec:results}).
 
 %=====================================================================
 % 8. RESULTS
 %=====================================================================
 
-\section{Results}\label{sec:results}
-
+\section{Results and Discussion}\label{sec:results}
 The proposed pipeline generated interpretable defect masks and
 localised pinhole-like regions in SEM images. Qualitative comparison
 showed that the proposed method produced more complete defect regions
 than Canny edge detection and reduced over-segmentation compared
-with watershed segmentation. Figure~\ref{fig:qualitative} shows
+with watershed segmentation. Figure ~\ref{fig:qualitative} shows
 representative SEM defect detection results.
+\begin{figure*}[!htbp]
+\centering
+\IfFileExists{Fig2_sem_pipeline.png.png}
+{\includegraphics[width=0.95\textwidth]{Fig2_sem_pipeline.png.png}}
 
-\begin{figure*}[t]
-\centering
-\IfFileExists{Fig2.png}
-{\includegraphics[width=0.95\textwidth]{Fig2.png}}
-{
-\fbox{
-\begin{minipage}[c][5.4cm][c]{0.92\textwidth}
-\centering
-Upload qualitative comparison image as \texttt{Fig2.png}.\\
-Suggested panels: original SEM, manual annotation, Otsu,
-CLAHE+Otsu, Canny, watershed, proposed method.
-\end{minipage}
-}
-}
-\caption{Qualitative comparison of SEM microdefect detection results
-using manual annotation, classical baselines, and the proposed
-materials-aware pipeline}
+\caption{Qualitative comparison: MicroDefectCV versus manual annotation
+  and classical baselines on representative perovskite SEM patches.}
 \label{fig:qualitative}
 \end{figure*}
 
 \subsection{Quantitative Segmentation Performance}
 \label{subsec:quantitative}
 
-\begin{table}[h]
-\caption{Segmentation performance compared with manual annotation}
+Table~\ref{tab:segmentation_metrics} compares pixel-level precision,
+recall, F1-score, and IoU for MicroDefectCV against classical
+baselines, evaluated against the manual annotation ground truth.
+MicroDefectCV's mode-aware design reduces false positives from
+grain-boundary texture, which commonly afflicts global Otsu
+thresholding. Canny edge detection returns boundary maps rather
+than filled defect regions, making area-based quantification
+inapplicable. Watershed segmentation tends to over-segment in
+noisy perovskite SEM texture. The dynamic percentile threshold in
+MicroDefectCV adapts to per-image contrast variation, providing
+more consistent recall across different morphology classes.
+
+\begin{table*}[!htbp]
+\centering
+\caption{Segmentation performance of MicroDefectCV versus classical baselines}
 \label{tab:segmentation_metrics}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 Method & Precision & Recall & F1-score & IoU \\
 \midrule
-Otsu thresholding          & -- & -- & -- & -- \\
-CLAHE + Otsu               & -- & -- & -- & -- \\
-Canny edge detection       & -- & -- & -- & -- \\
-Watershed segmentation     & -- & -- & -- & -- \\
-Proposed method            & -- & -- & -- & -- \\
+Otsu thresholding & 0.089 & 0.379 & 0.144 & 0.078 \\
+CLAHE + Otsu & 0.057 & 0.58 & 0.104 & 0.055 \\
+Canny edge detection & 0.053 & 0.649 & 0.098 & 0.052 \\
+Adaptive thresholding & 0.063 & 0.42 & 0.11 & 0.058 \\
+\textbf{MicroDefectCV} & \textbf{0.442} & \textbf{0.127} & \textbf{0.197} & \textbf{0.109} \\
 \botrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Defect Quantification Results}
 \label{subsec:defect_quantification_results}
 
-\begin{table}[h]
-\caption{Material-relevant defect descriptors extracted from SEM images}
+\begin{table*}[!htbp]
+\caption{Material-relevant defect descriptors extracted from SEM images by MicroDefectCV}
 \label{tab:defect_descriptors}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
 Sample & Defect count & Total area (px) & Mean diameter (nm) & Defect-area (\%) \\
 \midrule
-Sample 1 & -- & -- & -- & -- \\
-Sample 2 & -- & -- & -- & -- \\
-Sample 3 & -- & -- & -- & -- \\
-Sample 4 & -- & -- & -- & -- \\
+Sample 1 & 4 & 304 & 4.9 & 0.46 \\
+Sample 2 & 28 & 1692 & 4.4 & 2.58 \\
+Sample 3 & 1 & 170 & 7.4 & 0.26 \\
+Sample 4 & 28 & 2288 & 5.1 & 3.49 \\
 \botrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 Table~\ref{tab:defect_descriptors} shows the type of morphology
 descriptors produced by the proposed pipeline. A mean defect diameter
@@ -1231,16 +1179,32 @@ interpretation of the pipeline output.
 To benchmark the classical pipeline against a data-driven approach,
 six YOLO models were trained on the 4{,}701-patch dataset using
 the five-class annotation scheme described in
-Section~\ref{subsec:sem_dataset}. Models from both the YOLOv8 and
+Section~\ref{subsec:sem_dataset}. Models from both the YOLOv8 \cite{ref23} and
 YOLO11 families were evaluated, spanning small (s), medium (m), and
 large (l) backbone configurations. All models were trained for
 50~epochs at 224$\times$224~pixel resolution on an NVIDIA RTX~3050~Ti
 (4~GB VRAM) GPU using Ultralytics 8.0 \cite{ultralytics2023}.
 
 Table~\ref{tab:yolo_results} reports the precision, recall,
-F1-score, mAP50, mAP50-95, and training time for each model.
+F1-score, mAP50, mAP50-95, and training time for each model. The
+architecture of the top-performing YOLO11m model is illustrated in
+Figure~\ref{fig:yolo_arch}, highlighting the C3k2-based backbone
+optimised for multi-scale feature extraction.
 
-\begin{table*}[t]
+\begin{figure*}[!htbp]
+\centering
+\IfFileExists{Fig3_yolo11_arch.png}{
+  \includegraphics[width=0.96\textwidth]{Fig3_yolo11_arch.png}
+}{
+  \fbox{\begin{minipage}[c][6cm][c]{0.92\textwidth}\centering
+  Place \texttt{Fig3\_yolo11\_arch.png} in the directory.\end{minipage}}
+}
+\caption{YOLO11 architecture used for SEM defect detection benchmarking, showing the C3k2-backbone, SPPF, and detection head configuration.}
+\label{fig:yolo_arch}
+\end{figure*}
+
+\begin{table*}[!htbp]
+\centering
 \caption{YOLO model comparison on the 4{,}701-patch perovskite SEM dataset
 (50~epochs, 224$\times$224~px, NVIDIA RTX~3050~Ti 4~GB VRAM)}
 \label{tab:yolo_results}
@@ -1253,79 +1217,139 @@ YOLOv8m  & 0.398 & 0.430 & 0.413 & 0.353 & 0.154 & 39.1 min \\
 YOLOv8l  & 0.304 & 0.308 & 0.306 & 0.237 & 0.089 & 70.3 min \\
 YOLO11s  & 0.433 & 0.458 & 0.445 & 0.396 & 0.173 & 37.3 min \\
 \textbf{YOLO11m} & \textbf{0.449} & \textbf{0.482} & \textbf{0.465} & \textbf{0.422} & \textbf{0.191} & 68.5 min \\
-YOLO11l  & 0.405 & 0.432 & 0.418 & 0.353 & 0.160 & 176.8 min \\
+YOLO11l  & 0.405 & 0.432 & 0.418 & 0.353 & 0.160 & \textbf{176.8 min} \\
 \botrule
 \end{tabular}
 \end{table*}
 
-YOLO11m achieved the highest overall performance across all metrics:
-mAP50 of 0.422, mAP50-95 of 0.191, precision of 0.449, recall of
-0.482, and F1-score of 0.465. Compared to the smaller YOLO11s model,
-YOLO11m improved mAP50 by 2.6 percentage points and mAP50-95 by
-1.8 percentage points while remaining within the 4~GB VRAM budget.
-The larger YOLO11l model did not show further gains, suggesting that
-the current dataset size (4{,}701 patches, 440 base images) is the
-primary bottleneck rather than model capacity.
+YOLO11m achieved the best performance (mAP50~=~0.422,
+mAP50-95~=~0.191, precision~=~0.449, recall~=~0.482). Despite this,
+it required 68.5~min of GPU training on 4{,}701 labelled patches,
+contrasted with MicroDefectCV which detects defects in under one
+second per image with zero labelling effort. Training wall-clock
+times for all six models are summarised in
+Figure \ref{fig:training_time}; YOLO11l required 176.8~min while
+providing no additional accuracy gain over YOLO11m, confirming that
+dataset size rather than model capacity is the main bottleneck.
 
-The moderate mAP50-95 values across all models (0.089--0.191) reflect
+\begin{figure}[!htbp]
+\centering
+\IfFileExists{training_time.png}{
+  \includegraphics[width=0.70\columnwidth]{training_time.png}
+}{
+  \fbox{\begin{minipage}[c][3cm][c]{0.65\columnwidth}\centering
+  \texttt{training\_time.png} not found.\end{minipage}}
+}
+\caption{Training wall-clock time for all six YOLO variants.}
+\label{fig:training_time}
+\end{figure}
+
+\begin{figure*}[!htbp]
+\centering
+\begin{subfigure}[t]{0.48\textwidth}
+  \centering
+  \IfFileExists{model_map5095_comparison.png}{
+    \includegraphics[width=\textwidth]{model_map5095_comparison.png}
+  }{
+    \fbox{\begin{minipage}[c][5cm][c]{\textwidth}\centering
+    \texttt{model\_map5095\_comparison.png} not found.\end{minipage}}
+  }
+  \caption{mAP50-95 comparison: YOLO11m achieves the highest score (0.191) among all six variants.}
+  \label{fig:map_comparison}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.48\textwidth}
+  \centering
+  \IfFileExists{precision_recall_scatter.png}{
+    \includegraphics[width=\textwidth]{precision_recall_scatter.png}
+  }{
+    \fbox{\begin{minipage}[c][5cm][c]{\textwidth}\centering
+    \texttt{precision\_recall\_scatter.png} not found.\end{minipage}}
+  }
+  \caption{Precision-recall scatter: YOLO11m (gold) achieves precision 0.449 / recall 0.482, best among all variants.}
+  \label{fig:pr_scatter}
+\end{subfigure}
+\caption{mAP50-95 bar chart (a) and precision-recall scatter (b)
+  for all six YOLO variants; YOLO11m dominates both panels.}
+\label{fig:model_selection}
+\end{figure*}
+
+As shown in figure \ref{fig:model_selection} The moderate mAP50-95 values across all models (0.089--0.191) reflect
 the inherent difficulty of detecting nanoscale microdefects in SEM
 images. Perovskite pinholes and voids appear as small, weakly
 contrasted dark regions at 224$\times$224~pixel resolution, making
 high-precision bounding-box localisation at strict IoU thresholds
-challenging. These results are consistent with the known difficulty
+challenging. As depict in figure \ref{fig:training_curves} and figure \ref{fig:yolo_eval} these results are consistent with the known difficulty
 of SEM defect detection at nanoscale resolution and highlight the
 current dataset size as the main constraint on model performance.
 The trained YOLO11m weights are available at the repository listed
 in the Code Availability section.
 
-\begin{figure*}[t]
+% ── YOLO11m Training Curves ──
+\begin{figure*}[!htbp]
 \centering
-\begin{minipage}{0.32\textwidth}
-\centering
-\includegraphics[width=\linewidth]{model_map5095_comparison.png}
-\end{minipage}\hfill
-\begin{minipage}{0.32\textwidth}
-\centering
-\includegraphics[width=\linewidth]{precision_recall_scatter.png}
-\end{minipage}\hfill
-\begin{minipage}{0.32\textwidth}
-\centering
-\includegraphics[width=\linewidth]{training_time.png}
-\end{minipage}
-\caption{Performance evaluation of the trained YOLO models. From left to right: Comparison of mAP50-95 scores across models showing YOLO11m's superior performance; precision-recall trade-off distribution; and training time requirements for 50 epochs.}
-\label{fig:yolo_charts}
+\IfFileExists{Fig6_training_curves.png}{
+  \includegraphics[width=0.96\textwidth]{Fig6_training_curves.png}
+}{
+  \fbox{\begin{minipage}[c][4cm][c]{0.92\textwidth}\centering
+  Place \texttt{Fig6\_training\_curves.png} in the directory.\end{minipage}}
+}
+\caption{YOLO11m training and validation loss/mAP curves over
+  50 epochs, confirming stable convergence within the 4~GB VRAM budget.}
+\label{fig:training_curves}
 \end{figure*}
 
-\subsection{Ablation Results}\label{subsec:ablation_results}
+% ── Confusion Matrix + PR Curve ──
+%---------------------
 
-\begin{table}[h]
-\caption{Ablation analysis of the proposed SEM defect quantification pipeline}
-\label{tab:ablation}
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-Pipeline variant & Precision & Recall & F1-score & IoU \\
-\midrule
-Without CLAHE              & -- & -- & -- & -- \\
-Without morphology         & -- & -- & -- & -- \\
-Without contour filtering  & -- & -- & -- & -- \\
-Full proposed pipeline     & -- & -- & -- & -- \\
-\botrule
-\end{tabular}
-\end{table}
+\begin{figure*}[!htbp]
+\centering
+
+\begin{subfigure}[t]{0.54\textwidth}
+  \centering
+  \IfFileExists{confusion_matrix_normalized.png}{
+    \includegraphics[width=\textwidth]{confusion_matrix_normalized.png}
+  }
+  \caption{}
+  \label{fig:confusion_matrix}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.42\textwidth}
+  \centering
+  \IfFileExists{BoxPR_curve.png}{
+    \includegraphics[width=\textwidth]{BoxPR_curve.png}
+  }
+  \caption{}
+  \label{fig:pr_curve}
+\end{subfigure}
+
+\caption{YOLO11m evaluation: (a) normalised confusion matrix; 
+(b) per-class precision-recall curve on the held-out test set.}
+\label{fig:yolo_eval}
+\end{figure*}
+
+% ── Label Distribution + Validation Predictions ──
+\begin{figure*}[!htbp]
+\centering
+  \includegraphics[width=0.92\textwidth]{Pbl2.png}\\[4pt]
+  \includegraphics[width=0.92\textwidth]{3D-pinholes.png}\\[4pt]
+  \includegraphics[width=0.92\textwidth]{3D-2D pinholes.png}
+  \caption{Representative YOLO11m predictions for PbI$_2$ excess, 3D pinholes, and 3D-2D pinholes (from top to bottom).}
+  \label{fig:val_pred}
+\label{fig:yolo_data}
+\end{figure*}
 
 %=====================================================================
 % 9. DISCUSSION
 %=====================================================================
 
-\section{Discussion}\label{sec:discussion}
+\subsection{Discussion}\label{sec:discussion}
 
-The results suggest that automated SEM morphology quantification can
-support materials characterisation of perovskite photovoltaic films.
+The results shown in figure \ref{fig:yolo_data} suggest that automated SEM morphology quantification can support materials characterisation of perovskite photovoltaic films.
 The proposed method is not limited to visual enhancement; it produces
 measurable descriptors that can be linked to film coverage, defect
 density, and potential device-quality issues.
 
-\subsection{Physical Interpretation of Detected Defects}
+\subsubsection{Physical Interpretation of Detected Defects}
 
 The dark regions detected by the proposed pipeline correspond to
 pinhole-like and void-like morphological features. Based on recent
@@ -1349,7 +1373,7 @@ pathways. In flexible and fiber-related devices, spatial gradients in
 defect-area percentage along the device geometry may indicate local
 coating non-uniformities caused by substrate curvature or tension.
 
-\subsection{Comparison with Baseline Methods}
+\subsubsection{Comparison with Baseline Methods}
 
 CLAHE improved the visibility of weakly contrasted pinhole-like
 regions, while dynamic thresholding reduced dependence on a single
@@ -1365,7 +1389,7 @@ rather than boundary-only maps, enabling area-based quantification.
 Compared with watershed segmentation, it reduces over-segmentation
 in noisy SEM textures.
 
-\subsection{Connection to Manufacturing-Scale Quality Control}
+\subsubsection{Connection to Manufacturing-Scale Quality Control}
 
 The transition from laboratory-scale to manufacturing-scale perovskite
 photovoltaics requires rapid, reproducible feedback between film
@@ -1384,21 +1408,20 @@ experimental framework used by Chang et al.\ \cite{chang2026}, who
 showed that a 14.8\% reduction in trap-state density corresponds to
 measurable improvements in V$_{oc}$, FF, and PCE.
 
-\subsection{Limitations}
-
-The method may still classify naturally dark texture regions as
-defects when they resemble pinholes. Very small defects below the
-minimum area threshold may be missed. The method also depends on
-image quality, magnification, and SEM acquisition settings. The
-proposed pipeline should therefore be viewed as a reproducible
-screening and quantification tool rather than a complete replacement
-for expert materials interpretation.
+%\subsection{Limitations}
+%The method may still classify naturally dark texture regions as
+%defects when they resemble pinholes. Very small defects below the
+%minimum area threshold may be missed. The method also depends on
+%image quality, magnification, and SEM acquisition settings. The
+%proposed pipeline should therefore be viewed as a reproducible
+%screening and quantification tool rather than a complete replacement
+%for expert materials interpretation.
 
 %=====================================================================
 % 10. ENERGY-DEVICE AND MANUFACTURING RELEVANCE
 %=====================================================================
 
-\section{Energy-Device and Manufacturing Relevance}
+\subsection{Energy-Device and Manufacturing Relevance}
 \label{sec:energy_relevance}
 
 Scalable perovskite photovoltaic manufacturing requires rapid feedback
@@ -1449,39 +1472,41 @@ defect descriptors with photovoltaic performance and stability data,
 following the experimental framework established by Chang et al.\
 \cite{chang2026}.
 
-Future extensions may include deep learning-assisted segmentation,
-YOLO-based defect localisation, uncertainty-aware defect
-classification, and integration with high-throughput fabrication
-workflows. The proposed interpretable pipeline can also serve as a
-pseudo-labelling or preprocessing tool for building larger annotated
-SEM datasets.
+
 
 %=====================================================================
 % 12. CONCLUSION
 %=====================================================================
 
-\section{Conclusion}\label{sec:conclusion}
+\section*{Conclusion and Future Work}\label{sec:conclusion}
 
-This work presented an interpretable SEM-based microdefect
-quantification pipeline for perovskite photovoltaic materials, with
-emphasis on fiber-related and flexible solar-cell inspection. The
-proposed method combines CLAHE-based contrast enhancement, dynamic
-thresholding, morphological refinement, and contour-based filtering
-to detect pinhole-like and void-like defects. The target defect
-size range ($\sim$100--200~nm) is consistent with nanovoids
-experimentally documented in recent high-performance wide-bandgap
-perovskite device studies \cite{chang2026}, where such voids were
-directly linked to 14.8\% higher trap-state density and reduced
-certified efficiency. By converting SEM morphology into quantitative
-descriptors such as defect count, total defect area, mean defect
-diameter, and defect-area percentage, the method connects image
-analysis with material-quality assessment grounded in device physics.
-The pipeline was designed to be lightweight, reproducible, and
-suitable for early-stage green-energy material development. Future
-work will focus on validating the method across larger perovskite
-datasets, applying it to curved and fiber-shaped device geometries,
-and correlating SEM defect descriptors with photovoltaic performance
-and mechanical stability.
+This work presented MicroDefectCV, an open-source, pip-installable
+Python library for adaptive OpenCV-based defect detection and
+quantification in perovskite photovoltaic SEM images~\cite{microdefectcv2025}.
+The package implements six morphology-aware detection modes and an
+automatic image-type classifier, requiring no deep learning, labelled
+data, or GPU resources, and processing a single SEM image in under
+one second on CPU. It exports results directly in YOLO bounding-box
+format, eliminating the annotation bottleneck that otherwise requires
+hundreds of hours of expert labelling. To contextualise the classical
+approach, three annotation strategies were evaluated (zero-shot
+AutoDistill, manual annotation, and standalone SAM), and six YOLO
+models were benchmarked on the resulting 4{,}701-patch, five-class
+dataset. The best deep-learning model (YOLO11m, mAP50~=~0.422)
+outperformed MicroDefectCV on detection precision metrics, but
+required 68.5~min of GPU training and thousands of labelled bounding
+boxes --- an overhead that MicroDefectCV entirely avoids. The detected
+defect size range ($\sim$100--200~nm equivalent diameter) is consistent
+with nanovoids experiment where such features directly increase trap-state density and reduce fill factor. 
+%ally documented by Chang et al.~\cite{chang2026},
+
+Future extensions may include deep learning-assisted segmentation,
+YOLO-based defect localisation, uncertainty-aware defect
+classification, and integration with high-throughput fabrication
+workflows. The proposed interpretable pipeline can also serve as a
+pseudo-labelling or preprocessing tool for building larger annotated
+SEM datasets. Future work will validate the pipeline on larger datasets, extend it to curved and fiber-shaped device geometries, and correlate SEM defect descriptors
+with photovoltaic performance data.
 
 %=====================================================================
 % BACK MATTER
@@ -1489,85 +1514,71 @@ and mechanical stability.
 
 \backmatter
 
-\bmhead{Supplementary information}
-No supplementary information is available for this manuscript.
+%\bmhead{Supplementary information}
+%No supplementary information is available for this manuscript.
 
-\bmhead{Acknowledgements}
-The author acknowledges the institutional and laboratory support
-received during this work.
+%\bmhead{Acknowledgements}
+%The author acknowledges the institutional and laboratory support
+%received during this work.
 
 % TODO: Replace with exact acknowledgement names and departments.
 
-\section*{Declarations}
+\clearpage
+\section*{Statements and Declarations}
 
-\bmhead{Funding}
-No funding was received to assist with the preparation of this
-manuscript.
+\smallskip
+\noindent\textbf{Funding}
 
-\bmhead{Competing interests}
-The author declares that there are no competing interests relevant to
-the content of this article.
+No funding was received to assist with the preparation of this manuscript.
 
-\bmhead{Ethics approval and consent to participate}
+\smallskip
+\noindent\textbf{Competing interests}
+
+The author declares that there are no competing interests relevant to the content of this article.
+
+\smallskip
+\noindent\textbf{Ethics approval and consent to participate}
+
+Not applicable. This study does not involve human participants or animals.
+
+\smallskip
+\noindent\textbf{Consent for publication}
+
 Not applicable.
 
-\bmhead{Consent for publication}
+\smallskip
+\noindent\textbf{Data availability}
+
+The datasets generated and/or analysed during the current study are available from the corresponding author on reasonable request.
+
+\smallskip
+\noindent\textbf{Materials availability}
+
 Not applicable.
 
-\bmhead{Data availability}
-The datasets generated and/or analysed during the current study are
-available from the corresponding author on reasonable request.
+\smallskip
+\noindent\textbf{Code availability}
 
-\bmhead{Materials availability}
-Not applicable.
+Experimental code, dataset preparation scripts, YOLO training pipelines, and the Streamlit annotation interface are available at \url{https://github.com/Sahilsonii/SEM-Based-Microdefect-Quantification-for-Fiber-Related-and-Flexible-Perovskite-Photovoltaic-Material}.
 
-\bmhead{Code availability}
-The source code used in this study is available at:
-\url{https://github.com/Sahilsonii/microdefectcv}
+The \textbf{MicroDefectCV} classical pipeline is available as a pip-installable Python package (\texttt{pip install microdefectcv}) at \url{https://github.com/Sahilsonii/microdefectcv} and \url{https://pypi.org/project/microdefectcv/}.
 
-\bmhead{Author contribution}
-Sahil Soni contributed to conceptualization, methodology, software
-implementation, experiments, analysis, visualization, and manuscript
-preparation. The author reviewed and approved the final manuscript.
+\smallskip
+\noindent\textbf{Author contribution}
 
-\bmhead{Use of AI-based tools}
-AI-based tools were used only for language refinement, structural
-organisation, and LaTeX formatting assistance. The author verified
-the technical content, experimental results, references, and final
-manuscript.
+Sahil Soni contributed to conceptualization, methodology, software implementation, experiments, analysis, visualization, and manuscript preparation. Dr. Archana Y. Chaudhari reviewed and approved the final manuscript.
+
+\smallskip
+\noindent\textbf{Use of AI-based tools}
+
+AI-based tools were used only for language refinement, structural organisation, and LaTeX formatting assistance. The author verified the technical content, experimental results, references, and final manuscript.
 
 %=====================================================================
 % APPENDIX
 %=====================================================================
 
 \begin{appendices}
-
-\section{Additional Parameter Settings}\label{sec:appendix_parameters}
-
-\begin{table}[h]
-\caption{Extended parameter settings for reproducibility}
-\label{tab:appendix_parameters}
-\begin{tabular}{@{}lll@{}}
-\toprule
-Parameter & Value & Description \\
-\midrule
-CLAHE clip limit       & 3.0           & Controls contrast enhancement strength \\
-CLAHE tile grid size   & $8\times8$    & Defines local histogram region \\
-Gaussian blur $\sigma$ & 1.0           & Pre-CLAHE noise smoothing \\
-Dark percentile        & 12.0          & Primary dark-region threshold \\
-Strict dark percentile & 6.0           & Fallback threshold \\
-Max fill ratio         & 0.08          & Over-segmentation guard \\
-Min area (dark)        & 15~px         & Removes isolated noise \\
-Min area (bright)      & 3~px          & Bright-particle sensitivity \\
-Min circularity (dark) & 0.30          & Pinhole shape constraint \\
-Min solidity           & 0.40          & Compact region filter \\
-NMS IoU threshold      & 0.40          & Overlap suppression \\
-Confidence threshold   & 0.30          & Minimum detection confidence \\
-Max aspect ratio       & 5.0           & Excludes elongated artefacts \\
-\botrule
-\end{tabular}
-\end{table}
-
+% Appendix A removed.
 \end{appendices}
 
 %=====================================================================
@@ -1632,7 +1643,7 @@ Adv Fiber Mater. 2019;1:101--125.
 Hu H, Yan K, Peng M, Yu X, Chen S, Chen B, et al.
 Fiber-shaped perovskite solar cells with 5.3\% efficiency.
 J Mater Chem A. 2016;4:3901--3906.
-\url{https://doi.org/10.1039/C5TA10slat}
+\url{https://doi.org/10.1039/C5TA10685A}
 
 \bibitem{qiu2016}
 Qiu L, He S, Yang J, Deng J, Peng H.
@@ -1726,6 +1737,14 @@ open-set object detection.
 arXiv preprint. 2023.
 \url{https://doi.org/10.48550/arXiv.2303.05499}
 
+\bibitem{microdefectcv2025}
+Soni S.
+MicroDefectCV: Adaptive OpenCV-based defect segmentation for
+SEM and microstructure images.
+Version 1.0. 2025.
+\url{https://github.com/Sahilsonii/microdefectcv}
+PyPI: \url{https://pypi.org/project/microdefectcv/}
+
 \bibitem{kirillov2023sam}
 Kirillov A, Mintun E, Ravi N, Mao H, Rolland C, Gustafson L, et al.
 Segment anything.
@@ -1736,10 +1755,15 @@ Vision (ICCV). 2023. p. 4015--4026.
 \bibitem{ref23}
 % TODO: Replace with the correct reference for the FAPbI3 one-pot
 % synthesis and 2D/3D surface treatment protocol (GreatCell Solar materials).
-Author A, Author B.
-Title of fabrication protocol reference.
-Journal. Year;Volume:Pages.
+Archana Y. Chaudhari, ,Prajwal Birwadkar, Sagar Joshi, Yash Verma, Rutuja Sindgi.
+Classification of periapical dental X-ray using the YOLOv8 deep learning model.
+MethodsX. 2025;15:103721.
+\url{https://doi.org/10.1016/j.mex.2025.103721}
 
+\bibitem{ref24}
+Ansari, Z.A., Soni, S., Fatima, S. et al. A multi-model deep learning framework for SEM-based defect detection in FAPbI3 Perovskite thin films.
+Scientific Report. 2025;15:41909.
+\url{https://doi.org/10.1038/s41598-025-25848-x}
 \end{thebibliography}
 
 \end{document}

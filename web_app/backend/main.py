@@ -176,7 +176,7 @@ CLASS_COLORS = {
 # Inference endpoint  (sync def -- runs in thread pool)
 # ---------------------------------------------------------------------------
 @app.post("/api/detect")
-def detect_defects(file: UploadFile = File(...), conf: float = 0.25):
+def detect_defects(file: UploadFile = File(...), conf: float = 0.01):
     log.info(f"POST /api/detect -- file={file.filename} conf={conf}")
 
     if not worker_ready:

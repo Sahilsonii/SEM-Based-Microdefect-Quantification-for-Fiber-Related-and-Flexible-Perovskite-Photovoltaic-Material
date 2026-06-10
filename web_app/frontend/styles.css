@@ -233,6 +233,7 @@ body::before {
 
 /* Drop zone */
 .drop-zone {
+  display: block;           /* label must be block to fill width like a div */
   position: relative;
   border: 2px dashed rgba(255,107,53,0.3);
   border-radius: var(--radius-xl);
@@ -242,6 +243,7 @@ body::before {
   transition: all 0.35s var(--ease);
   background: var(--bg-glass);
   overflow: hidden;
+  width: 100%;              /* ensure it fills the glass-card */
 }
 .drop-zone::before {
   content: '';
@@ -288,10 +290,7 @@ body::before {
 }
 
 .drop-zone input[type="file"] {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
+  display: none;  /* Hidden — label click triggers it via for="fileInput" */
 }
 
 /* Loader */

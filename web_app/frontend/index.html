@@ -51,10 +51,12 @@
   </div>
 
   <div class="glass-card">
-    <div class="drop-zone" id="dropZone">
+    <label class="drop-zone" id="dropZone" for="fileInput" style="cursor:pointer;">
+      <input type="file" id="fileInput" accept="image/*,.tif,.tiff" style="display:none" />
       <span class="upload-icon">📤</span>
-      <p><strong>Drag & drop</strong> your SEM image here, or <strong>click to browse</strong></p>
+      <p><strong>Drag &amp; drop</strong> your SEM image here, or <strong>click to browse</strong></p>
       <p class="hint">Accepted: JPEG / PNG / TIFF (Any Resolution)</p>
+    </label>
   </div>
 
   <!-- Confidence threshold control -->
@@ -63,10 +65,10 @@
       <label style="font-size:0.88rem; color:var(--text-secondary); white-space:nowrap; font-weight:500;">
         🎯 Confidence Threshold
       </label>
-      <input type="range" id="confSlider" min="5" max="95" value="25" step="5"
+      <input type="range" id="confSlider" min="1" max="95" value="1" step="1"
              style="flex:1; min-width:160px; accent-color: var(--solar-orange);" />
-      <span id="confVal" style="font-size:0.95rem; font-weight:700; color:var(--solar-orange); min-width:42px; text-align:right;">25%</span>
-      <span style="font-size:0.78rem; color:var(--text-secondary);">↑ raise to reduce false positives on background images</span>
+      <span id="confVal" style="font-size:0.95rem; font-weight:700; color:var(--solar-orange); min-width:42px; text-align:right;">1%</span>
+      <span style="font-size:0.78rem; color:var(--text-secondary);">↑ raise to reduce false positives · lower for weak defects like PbI₂</span>
     </div>
   </div>
 
@@ -125,13 +127,13 @@
         <h3>📁 Directory Explorer</h3>
         <label>Root Directory (Images)</label>
         <div class="anno-dir-row">
-          <input type="text" id="annoRootDir" class="styled-input" value="C:\Users\asus\Desktop\SEM annotation" />
+          <input type="text" id="annoRootDir" class="styled-input" value="C:\Users\asus\Downloads\SEM-Annotation\data\raw" />
           <button id="annoLoadRoot" class="btn-primary">Load</button>
         </div>
 
         <label>Labels Directory</label>
         <input type="text" id="annoLabelsRoot" class="styled-input"
-               value="C:\Users\asus\Desktop\SEM annotation\sem_app\labels"
+               value="C:\Users\asus\Downloads\SEM-Annotation\labels"
                title="Root folder that contains per-class label sub-folders (YOLO .txt files)" />
 
         <label style="margin-top:0.6rem;">Class Folder</label>
