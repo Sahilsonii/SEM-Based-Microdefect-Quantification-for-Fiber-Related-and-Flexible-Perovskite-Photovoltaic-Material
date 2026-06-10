@@ -11,15 +11,22 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+labels/
 downloads/
 eggs/
 .eggs/
+SEM Paper 2/
 lib/
+Microdefectcv/sn-article.tex
 lib64/
+table_data_scripts/
+Microdefectcv/
+microdefectcv_release/
 parts/
 sdist/
 var/
 wheels/
+src/handlers/Auto_image_Annotation_using_autodistil_v3_ (2).ipynb
 share/python-wheels/
 *.egg-info/
 .installed.cfg
